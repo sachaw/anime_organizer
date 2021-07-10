@@ -4,7 +4,6 @@ import type {
   IFilterReturnType,
   IIncorrectFolder,
 } from '../types.ts';
-import { truncate } from '../utils.ts';
 
 export async function filterContainsFolders({
   animeFolders,
@@ -25,10 +24,9 @@ export async function filterContainsFolders({
       refinedFolders.push(folder);
     } else {
       const incorrectFolder: IIncorrectFolder = {
-        id: folder.anilist?.data.Media.id ?? 0,
-        name: truncate(folder.anilist?.data.Media.title.romaji ?? "Unknown"),
         reason: "folder",
         description: `Directory contains folders`,
+        data: folder,
       };
       incorrectFolders.push(incorrectFolder);
       emitEntry(incorrectFolder);

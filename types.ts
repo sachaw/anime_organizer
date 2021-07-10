@@ -9,8 +9,6 @@ export type IFilterReturnType = Promise<{
 }>;
 
 export interface IIncorrectFolder {
-  id: number;
-  name: string;
   reason:
     | "name"
     | "episodes"
@@ -20,6 +18,7 @@ export interface IIncorrectFolder {
     | "folder"
     | "extension";
   description: string;
+  data?: IAnimeFolder;
 }
 
 export interface IAnimeFolder {

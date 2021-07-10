@@ -4,7 +4,6 @@ import type {
   IFilterReturnType,
   IIncorrectFolder,
 } from '../types.ts';
-import { truncate } from '../utils.ts';
 
 export async function filterTotalEpisodes({
   animeFolders,
@@ -23,10 +22,9 @@ export async function filterTotalEpisodes({
       refinedFolders.push(folder);
     } else {
       const incorrectFolder: IIncorrectFolder = {
-        id: folder.anilist?.data.Media.id ?? 0,
-        name: truncate(folder.anilist?.data.Media.title.romaji ?? "Unknown"),
         reason: "episodes",
         description: `Invalid number of files: ${files}, should be: ${folder.anilist?.data.Media.episodes}`,
+        data: folder,
       };
       incorrectFolders.push(incorrectFolder);
       emitEntry(incorrectFolder);

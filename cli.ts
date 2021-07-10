@@ -1,11 +1,14 @@
 import { colors } from 'https:/deno.land/x/cliffy@v0.19.2/ansi/mod.ts';
 import { Command } from 'https:/deno.land/x/cliffy@v0.19.2/command/mod.ts';
 import { keypress } from 'https:/deno.land/x/cliffy@v0.19.2/keypress/mod.ts';
+import { Checkbox } from 'https:/deno.land/x/cliffy@v0.19.2/prompt/checkbox.ts';
 import { Input, prompt } from 'https:/deno.land/x/cliffy@v0.19.2/prompt/mod.ts';
 import { Table } from 'https:/deno.land/x/cliffy@v0.19.2/table/mod.ts';
 import ProgressBar from 'https:/deno.land/x/progress@v1.0.0/mod.ts';
 import { sleep } from 'https:/deno.land/x/sleep@v1.2.0/mod.ts';
+import { wait } from 'https:/deno.land/x/wait@0.1.11/mod.ts';
 
+import { actionRenameFolder } from './actions/actionRenameFolder.ts';
 import { filterContainsFolders } from './filters/filterContainsFolders.ts';
 import { filterEmptyFolder } from './filters/filterEmptyFolder.ts';
 import { filterFileTypes } from './filters/filterFileTypes.ts';
@@ -18,7 +21,7 @@ import type {
   IFilterReturnType,
   IIncorrectFolder,
 } from './types.ts';
-import { truncate } from './utils.ts';
+import { filter } from './utils.ts';
 
 await new Command()
   .name("animeOrganizer")
@@ -26,36 +29,15 @@ await new Command()
   .description("Command line framework for Deno")
   .parse(Deno.args);
 
-const result = prompt([
+console.clear();
+
+const result = await prompt([
   {
     name: "dir",
     message: "What directory do you want to scan?",
     type: Input,
   },
 ]);
-
-async function filter(
-  emitEntry: (incorrectFolder: IIncorrectFolder) => void,
-  filters: (({ animeFolders, emitEntry }: IFilterProps) => IFilterReturnType)[]
-) {
-  let folderStore: IAnimeFolder[] = animeFolders;
-  const incorrectFolderStore: IIncorrectFolder[] = [];
-
-  for (const filter of filters) {
-    await filter({
-      animeFolders: folderStore,
-      emitEntry,
-    }).then(({ incorrectFolders, refinedFolders }) => {
-      folderStore = refinedFolders;
-      incorrectFolderStore.push(...incorrectFolders);
-    });
-  }
-
-  return {
-    folderStore,
-    incorrectFolderStore,
-  };
-}
 
 const animeFolders: IAnimeFolder[] = [];
 const incorrectFolders: IIncorrectFolder[] = [];
@@ -68,7 +50,7 @@ const table = new Table()
   ])
   .body([])
   .border(true)
-  .padding(3)
+  .padding(2)
   .chars({
     top: "",
     bottom: "",
@@ -86,78 +68,109 @@ const table = new Table()
     leftMid: "",
     rightMid: "",
   });
-result
-  .then((results) => {
-    if (results.dir) {
-      const foldersToProcess: Deno.DirEntry[] = [];
-      for (const dirEntry of Deno.readDirSync(results.dir)) {
-        foldersToProcess.push(dirEntry);
-      }
+console.clear();
 
-      const progress = new ProgressBar({
-        title: "Reading folder contents",
-        total: foldersToProcess.length,
-      });
+if (result.dir) {
+  const spinner = wait(`Reading: ${colors.blue(result.dir)}`).start();
+  const foldersToProcess: Deno.DirEntry[] = [];
+  for (const dirEntry of Deno.readDirSync(result.dir)) {
+    foldersToProcess.push(dirEntry);
+  }
+  spinner.stop();
 
-      let currentIndex = 0;
-
-      for (const dirEntry of foldersToProcess) {
-        const regex = new RegExp(/^(?<id>[0-9]*?) - (?<name>.*$)/).exec(
-          dirEntry.name
-        );
-
-        if (regex && regex?.groups) {
-          const files: Deno.DirEntry[] = [];
-          for (const file of Deno.readDirSync(
-            `${results.dir}/${dirEntry.name}`.replace("//", "/")
-          )) {
-            files.push(file);
-          }
-          animeFolders.push({
-            id: parseInt(regex?.groups["id"]),
-            name: regex?.groups["name"],
-            files: files,
-            folderName: dirEntry.name,
-            checked: false,
-          });
-        } else
-          incorrectFolders.push({
-            id: 0,
-            name: "Unknown",
-            reason: "regex",
-            description: `Folder name: ${dirEntry.name}`,
-          });
-        currentIndex++;
-        progress.render(currentIndex);
-      }
-    } else {
-      console.log("Plese specify directory to scan");
-    }
-  })
-  .then(() => {
-    const renderIncorrectFolder = (incorrectFolder: IIncorrectFolder) => {
-      table.push([
-        colors.gray(incorrectFolder.id.toString()),
-        incorrectFolder.name,
-        incorrectFolder.reason,
-        incorrectFolder.description,
-      ]);
-    };
-
-    filter(renderIncorrectFolder, [
-      fetchAnilistData,
-      filterIncorrectName,
-      filterEmptyFolder,
-      filterContainsFolders,
-      filterFileTypes,
-      filterTotalEpisodes,
-    ]).then(async (_) => {
-      console.clear();
-      table.render();
-
-      await keypress();
-    });
+  const progress = new ProgressBar({
+    title: "Reading folder contents",
+    total: foldersToProcess.length,
   });
+
+  let currentIndex = 0;
+
+  for (const dirEntry of foldersToProcess) {
+    const regex = new RegExp(/^(?<id>[0-9]*?) - (?<name>.*$)/).exec(
+      dirEntry.name
+    );
+
+    if (regex && regex?.groups) {
+      const files: Deno.DirEntry[] = [];
+      for (const file of Deno.readDirSync(
+        `${result.dir}/${dirEntry.name}`.replace("//", "/")
+      )) {
+        files.push(file);
+      }
+      animeFolders.push({
+        id: parseInt(regex?.groups["id"]),
+        name: regex?.groups["name"],
+        files: files,
+        folderName: dirEntry.name,
+        checked: false,
+      });
+    } else
+      incorrectFolders.push({
+        reason: "regex",
+        description: `Folder name: ${dirEntry.name}`,
+      });
+    currentIndex++;
+    progress.render(currentIndex);
+  }
+} else {
+  console.log("Plese specify directory to scan");
+}
+
+const renderIncorrectFolder = (incorrectFolder: IIncorrectFolder) => {
+  table.push([
+    colors.gray((incorrectFolder.data?.id ?? 0).toString()),
+    incorrectFolder.data?.name ?? "Unknown",
+    incorrectFolder.reason,
+    incorrectFolder.description,
+  ]);
+};
+
+filter(
+  renderIncorrectFolder,
+  [
+    fetchAnilistData,
+    filterIncorrectName,
+    filterEmptyFolder,
+    filterContainsFolders,
+    filterFileTypes,
+    filterTotalEpisodes,
+  ],
+  animeFolders
+).then(async ({ incorrectFolderStore }) => {
+  console.clear();
+  const actions: string[] = await Checkbox.prompt({
+    message: "Select what actions you want to perform.",
+    options: [
+      { name: "Display results", value: "display" },
+      {
+        name: "Rename Folders",
+        value: "rename",
+        disabled: !incorrectFolderStore.find(
+          (folder) => folder.reason === "name"
+        ),
+      },
+      // Checkbox.separator("--------"),
+    ],
+  });
+
+  for (const action of actions) {
+    switch (action) {
+      case "display":
+        console.clear();
+        table.render();
+        break;
+      case "rename":
+        await actionRenameFolder(incorrectFolderStore, result.dir ?? "Unknown");
+
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  await keypress();
+});
 
 async function fetchAnilistData({
   animeFolders,
@@ -165,6 +178,7 @@ async function fetchAnilistData({
 }: IFilterProps): IFilterReturnType {
   const refinedFolders: IAnimeFolder[] = [];
   const incorrectFolders: IIncorrectFolder[] = [];
+  console.clear();
   const progress = new ProgressBar({
     title: "Fetching Anilist data",
     total: animeFolders.length,
@@ -175,7 +189,11 @@ async function fetchAnilistData({
   let rlReqRemaining = 1;
   for (const folder of animeFolders) {
     if (!rlReqRemaining) {
+      console.log("\n");
+      const spinner = wait(`Waiting for rate limiting`).start();
       await sleep(61 - (new Date().getTime() - rlTime.getTime()) / 1000);
+      spinner.stop();
+      console.clear();
       rlTime = new Date();
     }
 
@@ -215,10 +233,9 @@ async function fetchAnilistData({
         refinedFolders.push(folder);
       } else {
         const incorrectFolder: IIncorrectFolder = {
-          id: folder.id,
-          name: truncate(folder.anilist?.data.Media.title.romaji ?? "Unknown"),
           reason: "anilist",
           description: `Invalid Anilist data received`,
+          data: folder,
         };
 
         incorrectFolders.push(incorrectFolder);
@@ -226,10 +243,9 @@ async function fetchAnilistData({
       }
     } else {
       const incorrectFolder: IIncorrectFolder = {
-        id: folder.id,
-        name: truncate(folder.anilist?.data.Media.title.romaji ?? "Unknown"),
         reason: "anilist",
         description: `Failed to fetch Anilist data`,
+        data: folder,
       };
 
       incorrectFolders.push(incorrectFolder);

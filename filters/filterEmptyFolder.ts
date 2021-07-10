@@ -4,7 +4,6 @@ import type {
   IFilterReturnType,
   IIncorrectFolder,
 } from '../types.ts';
-import { truncate } from '../utils.ts';
 
 export async function filterEmptyFolder({
   animeFolders,
@@ -21,10 +20,9 @@ export async function filterEmptyFolder({
       refinedFolders.push(folder);
     } else {
       const incorrectFolder: IIncorrectFolder = {
-        id: folder.anilist?.data.Media.id ?? 0,
-        name: truncate(folder.anilist?.data.Media.title.romaji ?? "Unknown"),
         reason: "empty",
         description: `Folder is empty`,
+        data: folder,
       };
       incorrectFolders.push(incorrectFolder);
       emitEntry(incorrectFolder);

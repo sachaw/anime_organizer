@@ -6,7 +6,7 @@ import type {
   IFilterReturnType,
   IIncorrectFolder,
 } from '../types.ts';
-import { truncate } from '../utils.ts';
+import { getCorrectName } from '../utils.ts';
 
 export async function filterIncorrectName({
   animeFolders,
@@ -16,20 +16,17 @@ export async function filterIncorrectName({
   const incorrectFolders: IIncorrectFolder[] = [];
 
   for await (const folder of animeFolders) {
-    const correctName = `${
-      folder.anilist?.data.Media.id
-    } - ${folder.anilist?.data.Media.title.romaji
-      .replace(" : ", " - ")
-      .replace(": ", " - ")
-      .replace(/\\|\/|\*|\?|"|<|>\|/g, "")}`;
+    const correctName = getCorrectName(
+      folder.anilist?.data.Media.id ?? 0,
+      folder.anilist?.data.Media.title.romaji ?? "Unknown"
+    );
     if (folder.folderName === correctName) {
       refinedFolders.push(folder);
     } else {
       const incorrectFolder: IIncorrectFolder = {
-        id: folder.anilist?.data.Media.id ?? 0,
-        name: truncate(folder.anilist?.data.Media.title.romaji ?? "Unknown"),
         reason: "name",
         description: `Should be: ${colors.blue(correctName)}`,
+        data: folder,
       };
 
       incorrectFolders.push(incorrectFolder);
