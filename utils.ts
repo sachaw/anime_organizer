@@ -16,7 +16,8 @@ export function getCorrectName(id: number, name: string): string {
     .replace(" / ", " ")
     .replace("/ ", " ")
     .replace("/", " ")
-    .replace(/\\|\/|\*|\?|"|<|>\|/g, "")}`;
+    .replace(/\\|\/|\*|\?|"|<|>\|/g, "")
+    .replace(/\.*$/g, "")}`;
 }
 export async function filter(
   emitEntry: (incorrectFolder: IIncorrectFolder) => void,

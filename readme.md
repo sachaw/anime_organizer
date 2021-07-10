@@ -6,6 +6,20 @@
 
 This CLI tool is meant to be used in conjunction with the [Anilist metadata provider for Plex](https://github.com/sachaw/anilist.bundle) for curating local anime collections to be consumed via [Plex](https://plex.tv).
 
+## Usage
+
+Install:
+
+```bash
+deno install --unstable --allow-read --allow-net --allow-read --allow-write https://raw.githubusercontent.com/sachaw/anime_organizer/master/cli.ts
+```
+
+Run from Repository
+
+```bash
+deno run --unstable --allow-read --allow-net --allow-read --allow-write cli.ts
+```
+
 ## Functionality
 
 The CLI provides directory scanning and reporting based on predefined filters:
