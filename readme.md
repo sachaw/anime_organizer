@@ -11,13 +11,13 @@ This CLI tool is meant to be used in conjunction with the [Anilist metadata prov
 Install:
 
 ```bash
-deno install --unstable --allow-read --allow-net --allow-read --allow-write https://raw.githubusercontent.com/sachaw/anime_organizer/master/cli.ts
+deno install --unstable --allow-net --allow-read --allow-write https://raw.githubusercontent.com/sachaw/anime_organizer/master/cli.ts
 ```
 
 Run from Repository
 
 ```bash
-deno run --unstable --allow-read --allow-net --allow-read --allow-write cli.ts
+deno run --unstable --allow-net --allow-read --allow-write cli.ts
 ```
 
 ## Functionality
