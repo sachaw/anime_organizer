@@ -1,12 +1,12 @@
-import { colors } from 'https:/deno.land/x/cliffy@v0.19.2/ansi/mod.ts';
-import { Command } from 'https:/deno.land/x/cliffy@v0.19.2/command/mod.ts';
-import { keypress } from 'https:/deno.land/x/cliffy@v0.19.2/keypress/mod.ts';
-import { Checkbox } from 'https:/deno.land/x/cliffy@v0.19.2/prompt/checkbox.ts';
-import { Input, prompt } from 'https:/deno.land/x/cliffy@v0.19.2/prompt/mod.ts';
-import { Table } from 'https:/deno.land/x/cliffy@v0.19.2/table/mod.ts';
-import ProgressBar from 'https:/deno.land/x/progress@v1.0.0/mod.ts';
-import { sleep } from 'https:/deno.land/x/sleep@v1.2.0/mod.ts';
-import { wait } from 'https:/deno.land/x/wait@0.1.11/mod.ts';
+import { colors } from 'https:/deno.land/x/cliffy@v0.23.0/ansi/mod.ts';
+import { Command } from 'https:/deno.land/x/cliffy@v0.23.0/command/mod.ts';
+import { keypress } from 'https:/deno.land/x/cliffy@v0.23.0/keypress/mod.ts';
+import { Checkbox } from 'https:/deno.land/x/cliffy@v0.23.0/prompt/checkbox.ts';
+import { Input, prompt } from 'https:/deno.land/x/cliffy@v0.23.0/prompt/mod.ts';
+import { Table } from 'https:/deno.land/x/cliffy@v0.23.0/table/mod.ts';
+import ProgressBar from 'https:/deno.land/x/progress@v1.2.5/mod.ts';
+import { sleep } from 'https:/deno.land/x/sleep@v1.2.1/mod.ts';
+import { wait } from 'https:/deno.land/x/wait@0.1.12/mod.ts';
 
 import { actionRenameFolder } from './actions/actionRenameFolder.ts';
 import { filterContainsFolders } from './filters/filterContainsFolders.ts';
