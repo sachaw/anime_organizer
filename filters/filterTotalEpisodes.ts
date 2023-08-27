@@ -3,7 +3,7 @@ import type {
   IFilterProps,
   IFilterReturnType,
   IIncorrectFolder,
-} from '../types.ts';
+} from "../types.ts";
 
 export async function filterTotalEpisodes({
   animeFolders,
@@ -15,7 +15,9 @@ export async function filterTotalEpisodes({
   for await (const folder of animeFolders) {
     let files = 0;
     for await (const _file of folder.files) {
-      files++;
+      if (_file.isFile) {
+        files++;
+      }
     }
 
     if (files === folder.anilist?.data.Media.episodes) {
@@ -23,7 +25,8 @@ export async function filterTotalEpisodes({
     } else {
       const incorrectFolder: IIncorrectFolder = {
         reason: "episodes",
-        description: `Invalid number of files: ${files}, should be: ${folder.anilist?.data.Media.episodes}`,
+        description:
+          `Invalid number of files: ${files}, should be: ${folder.anilist?.data.Media.episodes}`,
         data: folder,
       };
       incorrectFolders.push(incorrectFolder);

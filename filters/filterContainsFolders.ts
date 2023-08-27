@@ -3,7 +3,7 @@ import type {
   IFilterProps,
   IFilterReturnType,
   IIncorrectFolder,
-} from '../types.ts';
+} from "../types.ts";
 
 export async function filterContainsFolders({
   animeFolders,
@@ -17,15 +17,23 @@ export async function filterContainsFolders({
 
     for await (const file of folder.files) {
       if (file.isDirectory) {
+        if (file.name === "Extras") {
+          continue;
+        }
         hasFolder = true;
       }
     }
+
     if (!hasFolder) {
       refinedFolders.push(folder);
     } else {
       const incorrectFolder: IIncorrectFolder = {
         reason: "folder",
-        description: `Directory contains folders`,
+        description: `Directory contains folders ${
+          folder.files.map((file) => file.isDirectory ? file.name : "").filter((
+            file,
+          ) => file !== "").join(", ")
+        }`,
         data: folder,
       };
       incorrectFolders.push(incorrectFolder);

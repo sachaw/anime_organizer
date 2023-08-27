@@ -4,7 +4,7 @@
 
 ## Introduction
 
-This CLI tool is meant to be used in conjunction with the [Anilist metadata provider for Plex](https://github.com/sachaw/anilist.bundle) for curating local anime collections to be consumed via [Plex](https://plex.tv).
+This CLI tool is meant to be used in conjunction with the [Anilist metadata provider for Plex](https://github.com/sachaw/anilist.bundle) for curating local anime collections to be consumed with [Plex](https://plex.tv).
 
 ## Usage
 

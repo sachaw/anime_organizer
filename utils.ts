@@ -3,26 +3,33 @@ import type {
   IFilterProps,
   IFilterReturnType,
   IIncorrectFolder,
-} from './types.ts';
+} from "./types.ts";
 
 export function truncate(input: string): string {
   return input.length > 27 ? `${input.substring(0, 24)}...` : input;
 }
-export function getCorrectName(id: number, name: string): string {
-  return `${id} - ${name
-    .replace(" : ", " - ")
-    .replace(": ", " - ")
-    .replace(":", "-")
-    .replace(" / ", " ")
-    .replace("/ ", " ")
-    .replace("/", " ")
-    .replace(/\\|\/|\*|\?|"|<|>\|/g, "")
-    .replace(/\.*$/g, "")}`;
+export function getCorrectName(
+  id: number,
+  name: string,
+  group: string,
+): string {
+  return `${id} - ${
+    name
+      .replace(" : ", " - ")
+      .replace(": ", " - ")
+      .replace(":", "-")
+      .replace(" / ", " ")
+      .replace("/ ", " ")
+      .replace("/", " ")
+      .replace(/\\|\/|\*|\?|"|<|>\|/g, "")
+      .replace(/\.*$/g, "")
+  } [${group}]`;
 }
+
 export async function filter(
   emitEntry: (incorrectFolder: IIncorrectFolder) => void,
   filters: (({ animeFolders, emitEntry }: IFilterProps) => IFilterReturnType)[],
-  folders: IAnimeFolder[]
+  folders: IAnimeFolder[],
 ) {
   let folderStore: IAnimeFolder[] = folders;
   const incorrectFolderStore: IIncorrectFolder[] = [];
@@ -41,4 +48,28 @@ export async function filter(
     folderStore,
     incorrectFolderStore,
   };
+}
+
+export function aniListQuery(id: number) {
+  return fetch("https://graphql.anilist.co/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      query: `query ($id: Int) {
+            Media (id: $id, type: ANIME) {
+              id
+              title {
+                romaji
+              }
+              episodes
+            }
+          }`,
+      variables: {
+        id,
+      },
+    }),
+  });
 }

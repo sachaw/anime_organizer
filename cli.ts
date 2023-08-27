@@ -1,27 +1,31 @@
-import { colors } from 'https:/deno.land/x/cliffy@v0.23.0/ansi/mod.ts';
-import { Command } from 'https:/deno.land/x/cliffy@v0.23.0/command/mod.ts';
-import { keypress } from 'https:/deno.land/x/cliffy@v0.23.0/keypress/mod.ts';
-import { Checkbox } from 'https:/deno.land/x/cliffy@v0.23.0/prompt/checkbox.ts';
-import { Input, prompt } from 'https:/deno.land/x/cliffy@v0.23.0/prompt/mod.ts';
-import { Table } from 'https:/deno.land/x/cliffy@v0.23.0/table/mod.ts';
-import ProgressBar from 'https:/deno.land/x/progress@v1.2.5/mod.ts';
-import { sleep } from 'https:/deno.land/x/sleep@v1.2.1/mod.ts';
-import { wait } from 'https:/deno.land/x/wait@0.1.12/mod.ts';
+import { colors } from "https://deno.land/x/cliffy@v1.0.0-rc.3/ansi/mod.ts";
+import { Command } from "https:/deno.land/x/cliffy@v1.0.0-rc.3/command/mod.ts";
+import { keypress } from "https:/deno.land/x/cliffy@v1.0.0-rc.3/keypress/mod.ts";
+import { Checkbox } from "https:/deno.land/x/cliffy@v1.0.0-rc.3/prompt/checkbox.ts";
+import {
+  Input,
+  prompt,
+  Toggle,
+} from "https:/deno.land/x/cliffy@v1.0.0-rc.3/prompt/mod.ts";
+import { Table } from "https:/deno.land/x/cliffy@v1.0.0-rc.3/table/mod.ts";
+import ProgressBar from "https://deno.land/x/progress@v1.3.8/mod.ts";
+import { sleep } from "https://deno.land/x/sleep@v1.2.1/mod.ts";
+import { wait } from "https:/deno.land/x/wait@0.1.12/mod.ts";
 
-import { actionRenameFolder } from './actions/actionRenameFolder.ts';
-import { filterContainsFolders } from './filters/filterContainsFolders.ts';
-import { filterEmptyFolder } from './filters/filterEmptyFolder.ts';
-import { filterFileTypes } from './filters/filterFileTypes.ts';
-import { filterIncorrectName } from './filters/filterIncorrectName.ts';
-import { filterTotalEpisodes } from './filters/filterTotalEpisodes.ts';
+import { actionRenameFolder } from "./actions/actionRenameFolder.ts";
+import { filterContainsFolders } from "./filters/filterContainsFolders.ts";
+import { filterEmptyFolder } from "./filters/filterEmptyFolder.ts";
+import { filterFileTypes } from "./filters/filterFileTypes.ts";
+import { filterIncorrectName } from "./filters/filterIncorrectName.ts";
+import { filterTotalEpisodes } from "./filters/filterTotalEpisodes.ts";
 import type {
   IAnilistData,
   IAnimeFolder,
   IFilterProps,
   IFilterReturnType,
   IIncorrectFolder,
-} from './types.ts';
-import { filter } from './utils.ts';
+} from "./types.ts";
+import { aniListQuery, filter } from "./utils.ts";
 
 await new Command()
   .name("animeOrganizer")
@@ -87,28 +91,32 @@ if (result.dir) {
 
   for (const dirEntry of foldersToProcess) {
     const regex = new RegExp(/^(?<id>[0-9]*?) - (?<name>.*$)/).exec(
-      dirEntry.name
+      dirEntry.name,
     );
 
     if (regex && regex?.groups) {
       const files: Deno.DirEntry[] = [];
-      for (const file of Deno.readDirSync(
-        `${result.dir}/${dirEntry.name}`.replace("//", "/")
-      )) {
+      for (
+        const file of Deno.readDirSync(
+          `${result.dir}/${dirEntry.name}`.replace("//", "/"),
+        )
+      ) {
         files.push(file);
       }
       animeFolders.push({
         id: parseInt(regex?.groups["id"]),
         name: regex?.groups["name"],
         files: files,
+        hasExtras: files.find((file) => file.name === "Extras") ? true : false,
         folderName: dirEntry.name,
         checked: false,
       });
-    } else
+    } else {
       incorrectFolders.push({
         reason: "regex",
         description: `Folder name: ${dirEntry.name}`,
       });
+    }
     currentIndex++;
     progress.render(currentIndex);
   }
@@ -135,7 +143,7 @@ filter(
     filterFileTypes,
     filterTotalEpisodes,
   ],
-  animeFolders
+  animeFolders,
 ).then(async ({ incorrectFolderStore }) => {
   console.clear();
   const actions: string[] = await Checkbox.prompt({
@@ -146,7 +154,7 @@ filter(
         name: "Rename Folders",
         value: "rename",
         disabled: !incorrectFolderStore.find(
-          (folder) => folder.reason === "name"
+          (folder) => folder.reason === "name",
         ),
       },
       // Checkbox.separator("--------"),
@@ -171,7 +179,6 @@ filter(
 
   await keypress();
 });
-
 async function fetchAnilistData({
   animeFolders,
   emitEntry,
@@ -179,6 +186,17 @@ async function fetchAnilistData({
   const refinedFolders: IAnimeFolder[] = [];
   const incorrectFolders: IIncorrectFolder[] = [];
   console.clear();
+
+  const cacheResults = await prompt([
+    {
+      name: "cache",
+      message: "Do you want to cache AniList results?",
+      type: Toggle,
+    },
+  ]);
+
+  console.clear();
+
   const progress = new ProgressBar({
     title: "Fetching Anilist data",
     total: animeFolders.length,
@@ -187,10 +205,16 @@ async function fetchAnilistData({
   let currentIndex = 1;
   let rlTime = new Date();
   let rlReqRemaining = 1;
+
   for (const folder of animeFolders) {
+    let data: IAnilistData;
+
     if (!rlReqRemaining) {
       console.log("\n");
       const spinner = wait(`Waiting for rate limiting`).start();
+      console.log(rlReqRemaining);
+      console.log(rlTime.getTime());
+
       await sleep(61 - (new Date().getTime() - rlTime.getTime()) / 1000);
       spinner.stop();
       console.clear();
@@ -198,53 +222,50 @@ async function fetchAnilistData({
     }
 
     progress.render(currentIndex);
-    const response = await fetch("https://graphql.anilist.co/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        query: `query ($id: Int) {
-            Media (id: $id, type: ANIME) {
-              id
-              title {
-                romaji
-              }
-              episodes
-            }
-          }`,
-        variables: {
-          id: folder.id,
-        },
-      }),
-    });
 
-    const data: IAnilistData = await response.json();
-    rlReqRemaining = parseInt(
-      response.headers.get("x-ratelimit-remaining") ?? "1"
-    );
+    const shouldCache = cacheResults.cache ?? false;
+
+    if (shouldCache) {
+      const fileName = `./cache/${folder.id}.json`;
+      const fileExists = await Deno.stat(fileName).catch(() => false);
+
+      if (fileExists) {
+        const file = await Deno.readTextFile(fileName);
+        data = JSON.parse(file);
+      } else {
+        const response = await aniListQuery(folder.id);
+        data = await response.json();
+        rlReqRemaining = parseInt(
+          response.headers.get("x-ratelimit-remaining") ?? "1",
+        );
+        await Deno.writeTextFile(fileName, JSON.stringify(data));
+        Deno.writeTextFile(
+          "./headers.txt",
+          `${JSON.stringify(response.headers.keys())}\n`,
+          { append: true },
+        );
+      }
+    } else {
+      const response = await aniListQuery(folder.id);
+      data = await response.json();
+      //write headers to file, appending each new one to the end
+
+      rlReqRemaining = parseInt(
+        response.headers.get("x-ratelimit-remaining") ?? "1",
+      );
+    }
 
     currentIndex++;
 
-    if (data.data !== null) {
-      if (data.data.Media !== null) {
-        folder.anilist = data;
-        refinedFolders.push(folder);
-      } else {
-        const incorrectFolder: IIncorrectFolder = {
-          reason: "anilist",
-          description: `Invalid Anilist data received`,
-          data: folder,
-        };
-
-        incorrectFolders.push(incorrectFolder);
-        emitEntry(incorrectFolder);
-      }
+    if (data.data !== null && data.data.Media !== null) {
+      folder.anilist = data;
+      refinedFolders.push(folder);
     } else {
       const incorrectFolder: IIncorrectFolder = {
         reason: "anilist",
-        description: `Failed to fetch Anilist data`,
+        description: data.data !== null
+          ? `Invalid Anilist data received`
+          : `Failed to fetch Anilist data`,
         data: folder,
       };
 
@@ -254,7 +275,7 @@ async function fetchAnilistData({
   }
 
   return {
-    refinedFolders: refinedFolders,
-    incorrectFolders: incorrectFolders,
+    refinedFolders,
+    incorrectFolders,
   };
 }

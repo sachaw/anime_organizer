@@ -1,12 +1,12 @@
-import { colors } from 'https:/deno.land/x/cliffy@v0.19.2/ansi/mod.ts';
+import { colors } from "https:/deno.land/x/cliffy@v1.0.0-rc.3/ansi/mod.ts";
 
 import type {
   IAnimeFolder,
   IFilterProps,
   IFilterReturnType,
   IIncorrectFolder,
-} from '../types.ts';
-import { getCorrectName } from '../utils.ts';
+} from "../types.ts";
+import { getCorrectName } from "../utils.ts";
 
 export async function filterIncorrectName({
   animeFolders,
@@ -18,7 +18,8 @@ export async function filterIncorrectName({
   for await (const folder of animeFolders) {
     const correctName = getCorrectName(
       folder.anilist?.data.Media.id ?? 0,
-      folder.anilist?.data.Media.title.romaji ?? "Unknown"
+      folder.anilist?.data.Media.title.romaji ?? "Unknown",
+      folder.folderName.match(/\[(.*?)\]/)?.[1] || "Unknown",
     );
     if (folder.folderName === correctName) {
       refinedFolders.push(folder);

@@ -26,6 +26,7 @@ export interface IAnimeFolder {
   name: string;
   files: Deno.DirEntry[];
   folderName: string;
+  hasExtras: boolean;
   anilist?: IAnilistData;
   correct?: boolean;
   checked: boolean;

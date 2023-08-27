@@ -3,7 +3,7 @@ import type {
   IFilterProps,
   IFilterReturnType,
   IIncorrectFolder,
-} from '../types.ts';
+} from "../types.ts";
 
 export async function filterFileTypes({
   animeFolders,
@@ -17,7 +17,7 @@ export async function filterFileTypes({
     for await (const file of folder.files) {
       const name = file.name.split(".");
 
-      if (name[name.length - 1] !== "mkv") {
+      if (name[name.length - 1] !== "mkv" && !file.isDirectory) {
         invalidFileTypes.push(name[name.length - 1]);
       }
     }
